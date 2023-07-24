@@ -93,14 +93,18 @@ local b1=  1.0 -cos(omega)
 local b2=( 1.0 -cos(omega))/2.0
 local output = {}
 local in1,in2,out1,out2=input[1],input[1],input[1],input[1]
-for i=1,#input do
-output[i]=nclip(b0/a0*input[i]+b1/a0*in1+b2/a0*in2-a1/a0*out1-a2/a0*out2,0,15)
+for i=1,#input*3 do
+output[i]=nclip(b0/a0*input[i%#input+1]+b1/a0*in1+b2/a0*in2-a1/a0*out1-a2/a0*out2,0,15)
 in2= in1   -- 2つ前の入力信号を更新
-in1 = input[i]  -- 1つ前の入力信号を更新
+in1 = input[i%#input+1]  -- 1つ前の入力信号を更新
 out2 = out1  -- 2つ前の出力信号を更新
 out1 = output[i] 
 end
-return output
+tmp = {}
+for i=1,#input do
+    tmp[i] = output[i+#input]
+end
+return tmp
 end
 function window(input,freq)
     local out={}
@@ -166,22 +170,23 @@ wft={
         SAW=2,
         SIN=3
     }
-function psg(wftype,vol,freq,duty)
+function psg(wftype,vol,freq,duty,phase)
     duty=duty or 15
     freq=freq or 1
     vol=vol/16 or 1
+    phase=math.floor(phase or 0)
     --freq=freq/2
     tmp={}
     
     for i=1,32 do
         if wftype==wft.SQU then
-            tmp[i]=(math.max(math.min((duty)-i,1),0)//1)*15
+            tmp[(phase+i)%32+1]=(math.max(math.min((duty)-(i-1),1),0)//1)*15
         end if wftype==wft.TRI then
-            tmp[i]=math.abs((i*freq%31)-15)*vol
+            tmp[(phase+i)%32+1]=math.abs((i*freq%31)-15)*vol
         end if wftype==wft.SAW then
-            tmp[i]=(i*freq%31)*vol/2
+            tmp[(phase+i)%32+1]=(i*freq%31)*vol/2
         end if wftype==wft.SIN then
-            tmp[i]=math.sin(math.rad((i*freq)/16))*vol*15
+            tmp[(phase+i)%32+1]=math.sin(math.rad((i*freq)*(360/32)))*vol*15
         end
     end
     return tmp
@@ -221,6 +226,8 @@ vols[ch+1] = vols[ch+1]+(((value&0xf000)>>12)-vols[ch+1])/rate
 freqnum = value&0x0fff
 modulo = volume*intensity
 
+--put your algolithm here...
+
 --tmp_[1] = fm(modulo,freq,1,ticopl_frame)
 --tmp_[2] = fm(90,freq,1,ticopl_frame)
 --tmp_[1] = pwm(volume*2)
@@ -228,14 +235,13 @@ modulo = volume*intensity
 --tmp_[1] = pwm(volume*2)
 --local tmp = wfsum(tmp_)
 
-
 local tmp = peekwfrl(ch)
-tmp = psg(wft.SAW,15,1)
+--tmp = psg(wft.SAW,15,1,0,15)
 --local tmp = pwm(nclip(time()/10%30+1,1,30))
---tmp = filter(tmp,volume)
+tmp = filter(tmp,16-(0.01+volume))
 --tmp = window(tmp)
 tmp = normalize(tmp)
-trace(tmp[1])
+--trace(tmp[1])
 local tmp2=""
 for _,i in pairs(tmp) do
 tmp2=tmp2..f("%x",math.floor(tonumber(i)))
@@ -274,7 +280,7 @@ local val_,vol_,freq_
 val_ = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 vol_ = (val_&0xf000)>>12
 freq_ = (val_&0x0fff)+1
---freq_ = 120
+freq_ = 120
 vol_ = 15
 for i=0,68 do
 local j=freq_/192
