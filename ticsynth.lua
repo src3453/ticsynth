@@ -80,17 +80,26 @@ end
         end
         return tmp
     end
-function filter(input,cutoff,q)
+ftype = {
+    LP = 0,
+    HP = 1
+}
+function filter(input,cutoff,filtType,q,omega,a0,a1,a2,b0,b1,b1f,b2)
+if ftype == ftype.LP then
+    b1f = 1
+elseif ftype == ftype.HP then
+    b1f = -1
+end
 local sin,cos=math.sin,math.cos
 local filt_q=q or 0.707106781
-local omega= 2.0 *3.14159265*cutoff/32
+local omega= (2.0 or omega) *3.14159265*cutoff/32
 local alpha=sin(omega)/(2.0*filt_q) 
-local a0=  1.0 +alpha
-local a1= -2.0 *cos(omega)
-local a2=  1.0 -alpha
-local b0=( 1.0 -cos(omega))/2.0
-local b1=  1.0 -cos(omega)
-local b2=( 1.0 -cos(omega))/2.0
+local a0= ( 1.0 or a0) +alpha
+local a1= (-2.0 or a1) *cos(omega)
+local a2= ( 1.0 or a2) -alpha
+local b0=(( 1.0 or b0) -cos(omega))/2.0
+local b1= b1f*(( 1.0 or b1) -cos(omega))
+local b2=(( 1.0 or b2) -cos(omega))/2.0
 local output = {}
 local in1,in2,out1,out2=input[1],input[1],input[1],input[1]
 for i=1,#input*3 do
@@ -100,7 +109,7 @@ in1 = input[i%#input+1]  -- 1つ前の入力信号を更新
 out2 = out1  -- 2つ前の出力信号を更新
 out1 = output[i] 
 end
-tmp = {}
+local tmp = {}
 for i=1,#input do
     tmp[i] = output[i+#input]
 end
@@ -249,7 +258,7 @@ modulo = volume*intensity
 local tmp = peekwfrl(ch)
 --tmp = psg(wft.SAW,15,1,0,15)
 --local tmp = pwm(nclip(time()/10%30+1,1,30))
-tmp = filter(tmp,16-(0.01+volume))
+tmp = filter(tmp,(1+volume),ftype.HP)
 --tmp = window(tmp)
 tmp = normalize(tmp)
 --trace(tmp[1])
