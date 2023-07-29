@@ -3,7 +3,7 @@ freq=3.0
 modint=1.0
 ticopl_frame = 0
 syn_enable = {true, true, true, true}
-vols = {0,0,0,0}
+vols,sfx_frame = {0,0,0,0},{0,0,0,0}
 function ticsyn()
 function peekwfrl(index)
 local out
@@ -155,11 +155,17 @@ for i=2,#wf do
 end
 return tmp
 end
-function wfmod(wf)
+function wfmod(wf,b)
 local tmp=wf[1]
+if b==nil then
 for i=2,#wf do
     for j=1,32 do
         tmp[i] = (tmp[i]or 0)%wf[i][j]
+    end
+end
+else
+    for j=1,32 do
+        tmp[i] = (wf[j] or 0)%b
     end
 end
 return tmp
@@ -223,6 +229,11 @@ local rate = 1
 value = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 volume = vols[ch+1]
 vols[ch+1] = vols[ch+1]+(((value&0xf000)>>12)-vols[ch+1])/rate
+if (value&0xf000)>>12 == 15 then
+    sfx_frame[ch+1]=0
+else
+    sfx_frame[ch+1]=sfx_frame[ch+1]+1
+end
 freqnum = value&0x0fff
 modulo = volume*intensity
 
@@ -288,7 +299,18 @@ local f=math.floor
     local wf=peekwfr(ch)
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
 end end
+function writesfx()
+    local vol="0123456789abcedfffffffffffffff"
+    for ch=0,63 do
+        for i=1,30 do
+            poke4(0x201c4+128*ch+i*4,tonumber(string.sub(vol,i,i),16))
+        end
+        poke4(2*0x100e4+121,7)
+        poke(0x100e4+63+64*ch,0xf1)
+    end
 end
+end
+function BOOT()writesfx()end
 synthesis()
 visualize()
 end
