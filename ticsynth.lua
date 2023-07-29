@@ -72,6 +72,22 @@ end
         end
         return tmp
     end
+    function wfmul(a,b)local tmp={}for i=1,32 do if type(b)=="number"then tmp[i]=a[i]*b else tmp[i]=a[i]*b[i]end end return tmp end
+	function wfmod(wf,b)
+		local tmp={wf[1]}
+		if b==nil then
+		for i=2,#wf do
+			for j=1,32 do
+				tmp[i] = (tmp[i]or 0)%wf[i][j]
+			end
+		end
+		else
+			for j=1,32 do
+				tmp[j] = (wf[j] or 0)%b
+			end
+		end
+		return tmp
+	end
     function normalize(wf)
         local tmp={}
         local mx,mn=math.max(table.unpack(wf)),math.min(table.unpack(wf))
@@ -85,11 +101,11 @@ ftype = {
     HP = 1
 }
 function filter(input,cutoff,filtType,q,omega,a0,a1,a2,b0,b1,b1f,b2)
-if ftype == ftype.LP then
+if filtType == ftype.LP then
     b1f = 1
-elseif ftype == ftype.HP then
+elseif filtType == ftype.HP then
     b1f = -1
-end
+else b1f = 1 end
 local sin,cos=math.sin,math.cos
 local filt_q=q or 0.707106781
 local omega= (2.0 or omega) *3.14159265*cutoff/32
@@ -137,53 +153,13 @@ function window2(after,before)
     end
     return after
 end
-function wfmul(wf)
-local tmp=wf[1]
-for i=2,#wf do
-    for j=1,32 do
-        tmp[i] = (tmp[i]or 0)*wf[i][j]
-    end
-end
-return tmp
-end
-function wfsub(wf)
-local tmp=wf[1]
-for i=2,#wf do
-    for j=1,32 do
-        tmp[i] = (tmp[i]or 0)-wf[i][j]
-    end
-end
-return tmp
-end
-function wfdiv(wf)
-local tmp=wf[1]
-for i=2,#wf do
-    for j=1,32 do
-        tmp[i] = (tmp[i]or 0)/wf[i][j]
-    end
-end
-return tmp
-end
-function wfmod(wf,b)
-local tmp=wf[1]
-if b==nil then
-for i=2,#wf do
-    for j=1,32 do
-        tmp[i] = (tmp[i]or 0)%wf[i][j]
-    end
-end
-else
-    for j=1,32 do
-        tmp[i] = (wf[j] or 0)%b
-    end
-end
-return tmp
-end
+
 wft={
         SQU=0,
         TRI=1,
         SAW=2,
-        SIN=3
+        SIN=3,
+        NOI=4
     }
 function psg(wftype,vol,freq,duty,phase)
     duty=duty or 15
@@ -201,7 +177,9 @@ function psg(wftype,vol,freq,duty,phase)
         end if wftype==wft.SAW then
             tmp[(phase+i)%32+1]=(i*freq%31)*vol/2
         end if wftype==wft.SIN then
-            tmp[(phase+i)%32+1]=math.sin(math.rad((i*freq)*(360/32)))*vol*15
+            tmp[(phase+i)%32+1]=math.sin(math.rad((i*freq)*(360/32)))*vol*7+8
+        end if wftype==wft.NOI then
+            tmp[(phase+i)%32+1]=math.random()*vol*15
         end
     end
     return tmp
@@ -234,7 +212,7 @@ local value,volume,modulo,freqnum
 
 
 
-local rate = 1
+local rate = 2
 value = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 volume = vols[ch+1]
 vols[ch+1] = vols[ch+1]+(((value&0xf000)>>12)-vols[ch+1])/rate
@@ -256,12 +234,16 @@ modulo = volume*intensity
 --local tmp = wfsum(tmp_)
 
 local tmp = peekwfrl(ch)
---tmp = psg(wft.SAW,15,1,0,15)
---local tmp = pwm(nclip(time()/10%30+1,1,30))
-tmp = filter(tmp,(1+volume),ftype.HP)
---tmp = window(tmp)
+--local tmp = wfmod(psg(wft.SIN,volume,1,0,15),15)
+--tmp = fm2(tmp,modulo,freq,0)
+tmp = filter(tmp,(freq+16)+volume*modint)
+tmp = wfmod(tmp,16)
+tmp = fm2(tmp,modulo,freq,0)
+tmp = filter(tmp,5)
+
+--tmp = filter(tmp,math.sin(time()/500)*7+8)
 tmp = normalize(tmp)
---trace(tmp[1])
+
 local tmp2=""
 for _,i in pairs(tmp) do
 tmp2=tmp2..f("%x",math.floor(tonumber(i)))
@@ -278,7 +260,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.3 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.4 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -308,6 +290,7 @@ local f=math.floor
     local wf=peekwfr(ch)
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
 end end
+end
 function writesfx()
     local vol="0123456789abcedfffffffffffffff"
     for ch=0,63 do
@@ -318,8 +301,7 @@ function writesfx()
         poke(0x100e4+63+64*ch,0xf1)
     end
 end
-end
-function BOOT()writesfx()end
+--writesfx()
 synthesis()
 visualize()
 end
