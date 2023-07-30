@@ -212,7 +212,7 @@ local value,volume,modulo,freqnum
 
 
 
-local rate = 2
+local rate = 1
 value = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 volume = vols[ch+1]
 vols[ch+1] = vols[ch+1]+(((value&0xf000)>>12)-vols[ch+1])/rate
@@ -233,16 +233,14 @@ modulo = volume*intensity
 --tmp_[1] = pwm(volume*2)
 --local tmp = wfsum(tmp_)
 
-local tmp = peekwfrl(ch)
---local tmp = wfmod(psg(wft.SIN,volume,1,0,15),15)
+--local tmp = peekwfrl(ch)
+local tmp = wfmod(psg(wft.SIN,volume*8,1,0,15),15)
 --tmp = fm2(tmp,modulo,freq,0)
-tmp = filter(tmp,(freq+16)+volume*modint)
-tmp = wfmod(tmp,16)
-tmp = fm2(tmp,modulo,freq,0)
-tmp = filter(tmp,5)
+--tmp = wfmul(tmp,psg(wft.NOI,15))
+
 
 --tmp = filter(tmp,math.sin(time()/500)*7+8)
-tmp = normalize(tmp)
+--tmp = normalize(tmp)
 
 local tmp2=""
 for _,i in pairs(tmp) do
