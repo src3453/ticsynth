@@ -1,5 +1,7 @@
 # TicSynth
 A fully-customizable software synth for TIC-80
+## Description
+Software synth for TIC-80 written in lua. You can freely define the synthesis method by recombining functions.
 ## Supported synth methods
 - FM
 - Filter
