@@ -9,3 +9,9 @@ Software synth for TIC-80 written in lua. You can freely define the synthesis me
 - AM
 - mod/mul
 - and more in future updates
+## Sample Algorithms
+### Simple FM Synthesis
+```lua
+tmp_[1] = fm(modulo,freq,1,ticopl_frame)
+local tmp = wfsum(tmp_)
+```
