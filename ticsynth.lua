@@ -131,28 +131,6 @@ for i=1,#input do
 end
 return tmp
 end
-local function window(input,freq)
-    local out={}
-    freq=freq or 1
-    for i=0,31 do
-        win = nclip(2*math.sin(math.rad(i/32*180*freq)),0,1)
-
-        out[i+1] = (input[i+1])*win
-
-    end
-    return out
-end
-local function window2(after,before)
-    local diff={}
-    for i=1,32 do
-    diff[i] = after[i]-before[i]
-    end
-    diff = window(diff,1)
-    for i=1,32 do
-    after[i] = before[i]+diff[i]
-    end
-    return after
-end
 
 wft={
         SQU=0,
