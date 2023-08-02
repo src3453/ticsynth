@@ -5,7 +5,7 @@ ticopl_frame = 0
 syn_enable = {true, true, true, true}
 vols,sfx_frame = {0,0,0,0},{0,0,0,0}
 function ticsyn()
-function peekwfrl(index)
+local function peekwfrl(index)
 local out
 f = string.format
 out = {}
@@ -17,7 +17,7 @@ j=j+1
 end
 return out
 end
-function peekwfr(index)
+local function peekwfr(index)
     local out
     f = string.format
     out = ""
@@ -27,7 +27,7 @@ function peekwfr(index)
     end
     return out
     end
-function pokewfr(index,data)
+local function pokewfr(index,data)
 local j
 j = 1
 for i=0xff9c+index*18+2, 0xff9c+(index)*18+17 do
@@ -36,8 +36,8 @@ j = j + 2
 end
 end
 sub = string.sub
-function nclip(num,min,max)if num==nil or tostring(num)=="nan" then return 0 else return math.min(math.max(num,min),max)end end
-function fm(int,freq,freq2,ticopl_frame,theta,vol)
+local function nclip(num,min,max)if num==nil or tostring(num)=="nan" then return 0 else return math.min(math.max(num,min),max)end end
+local function fm(int,freq,freq2,ticopl_frame,theta,vol)
     f = string.format
     local tmp = carrier or {}
     local j=1
@@ -48,7 +48,7 @@ function fm(int,freq,freq2,ticopl_frame,theta,vol)
     end
     return tmp
 end
-    function fm2(carrier,int,freq,timestate)
+    local function fm2(carrier,int,freq,timestate)
         --timestate = timestate or 1
         local f = math.floor
         local tmp = {}
@@ -63,7 +63,7 @@ end
         end
         return tmp
     end
-    function wfsum(wf)
+    local function wfsum(wf)
         local tmp={}
         for j=1,#wf do
             for i=1,32 do
@@ -72,8 +72,8 @@ end
         end
         return tmp
     end
-    function wfmul(a,b)local tmp={}for i=1,32 do if type(b)=="number"then tmp[i]=a[i]*b else tmp[i]=a[i]*b[i]end end return tmp end
-	function wfmod(wf,b)
+    local function wfmul(a,b)local tmp={}for i=1,32 do if type(b)=="number"then tmp[i]=a[i]*b else tmp[i]=a[i]*b[i]end end return tmp end
+	local function wfmod(wf,b)
 		local tmp={wf[1]}
 		if b==nil then
 		for i=2,#wf do
@@ -88,7 +88,7 @@ end
 		end
 		return tmp
 	end
-    function normalize(wf)
+    local function normalize(wf)
         local tmp={}
         local mx,mn=math.max(table.unpack(wf)),math.min(table.unpack(wf))
        	for i=1,32 do
@@ -100,7 +100,7 @@ ftype = {
     LP = 0,
     HP = 1
 }
-function filter(input,cutoff,filtType,q,omega,a0,a1,a2,b0,b1,b1f,b2)
+local function filter(input,cutoff,filtType,q,omega,a0,a1,a2,b0,b1,b1f,b2)
 if filtType == ftype.LP then
     b1f = 1
 elseif filtType == ftype.HP then
@@ -131,7 +131,7 @@ for i=1,#input do
 end
 return tmp
 end
-function window(input,freq)
+local function window(input,freq)
     local out={}
     freq=freq or 1
     for i=0,31 do
@@ -142,7 +142,7 @@ function window(input,freq)
     end
     return out
 end
-function window2(after,before)
+local function window2(after,before)
     local diff={}
     for i=1,32 do
     diff[i] = after[i]-before[i]
@@ -161,7 +161,7 @@ wft={
         SIN=3,
         NOI=4
     }
-function psg(wftype,vol,freq,duty,phase)
+local function psg(wftype,vol,freq,duty,phase)
     duty=duty or 15
     freq=freq or 1
     vol=vol/16 or 1
@@ -184,7 +184,7 @@ function psg(wftype,vol,freq,duty,phase)
     end
     return tmp
 end
-function wfclip(wf,min,max)
+local function wfclip(wf,min,max)
 local tmp=wf
 for i=1,#wf do
     for j=1,32 do
@@ -195,7 +195,7 @@ return tmp
 end
 
 f = string.format
-function synthesis()
+local function synthesis()
 local intensity=modint*9
 if btnp(0,20,2) then modint=modint+0.1 end
 if btnp(1,20,2) then modint=modint-0.1 end
@@ -234,13 +234,13 @@ modulo = volume*intensity
 --local tmp = wfsum(tmp_)
 
 --local tmp = peekwfrl(ch)
-local tmp = wfmod(psg(wft.SIN,volume*8,1,0,15),15)
+local tmp = wfmod(psg(wft.SAW,volume*3+1,1,0,15),15)
 --tmp = fm2(tmp,modulo,freq,0)
 --tmp = wfmul(tmp,psg(wft.NOI,15))
 
 
---tmp = filter(tmp,math.sin(time()/500)*7+8)
---tmp = normalize(tmp)
+tmp = filter(tmp,16-volume)
+tmp = normalize(tmp)
 
 local tmp2=""
 for _,i in pairs(tmp) do
@@ -253,12 +253,12 @@ end
 ticopl_frame=ticopl_frame+32
 end
 
-function visualize()
+local function visualize()
 tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.4 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.6 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -289,7 +289,7 @@ local f=math.floor
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
 end end
 end
-function writesfx()
+local function writesfx()
     local vol="0123456789abcedfffffffffffffff"
     for ch=0,63 do
         for i=1,30 do
@@ -303,4 +303,4 @@ end
 synthesis()
 visualize()
 end
-function OVR()vbank(1)ticsyn()end
+local function OVR()vbank(1)ticsyn()end
