@@ -12,5 +12,10 @@ Software synth for TIC-80 written in lua. You can freely define the synthesis me
 ## Sample Algorithms
 ### Simple FM Synthesis
 ```lua
-local tmp = fm(modulo,freq,1,ticopl_frame)
+local tmp = fm(modulo,freq,1,ticopl_frame) -- do FM synthesis
+```
+### Apply Low-pass Filter to original waveforms
+```lua
+local tmp = peekwfrl(ch) -- to grab original waveform
+tmp = filter(tmp,volume,ftype.LP) -- "volume" is volume of current channel
 ```
