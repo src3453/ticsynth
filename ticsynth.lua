@@ -218,14 +218,14 @@ local tmp = wfsum(tmp_) -- to accumulate fm results
 
 
 --tmp = filter(tmp,16-volume)
-tmp = normalize(tmp)
+tmp = normalize(tmp) -- to normalize synthesis results
 
 local tmp2=""
 for _,i in pairs(tmp) do
-tmp2=tmp2..f("%x",math.floor(tonumber(i)))
+tmp2=tmp2..f("%x",math.floor(tonumber(i))) 
 end
 --print(tmp2)
-pokewfr(ch,tmp2)
+pokewfr(ch,tmp2) -- poke results to sound registers
 end
 end
 ticopl_frame=ticopl_frame+32
