@@ -96,7 +96,7 @@ end
         end
         return tmp
     end
-ftype = {
+local ftype = {
     LP = 0,
     HP = 1
 }
@@ -132,7 +132,7 @@ end
 return tmp
 end
 
-wft={
+local wft={
         SQU=0,
         TRI=1,
         SAW=2,
