@@ -171,14 +171,16 @@ for i=1,#wf do
 end
 return tmp
 end
-
-f = string.format
+local function keyexec()
+    if btnp(0,20,2) then modint=modint+0.1 end
+    if btnp(1,20,2) then modint=modint-0.1 end
+    if btnp(2,20,2) then freq=freq-0.1 end
+    if btnp(3,20,2) then freq=freq+0.1 end
+    end
+local f = string.format
 local function synthesis()
 local intensity=modint*9
-if btnp(0,20,2) then modint=modint+0.1 end
-if btnp(1,20,2) then modint=modint-0.1 end
-if btnp(2,20,2) then freq=freq-0.1 end
-if btnp(3,20,2) then freq=freq+0.1 end
+
 --cls(13)
 --fm2(1,0,frq,frq2,ticopl_frame)
 --for i=0,15 do
@@ -278,6 +280,7 @@ end
     end
 end]]
 --writesfx() --unused
+keyexec()   -- key parameter changer
 synthesis() -- core of synthesis part
 visualize() -- visualizer of sound registers
 end
