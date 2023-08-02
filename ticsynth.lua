@@ -226,20 +226,20 @@ modulo = volume*intensity
 
 --put your algolithm here...
 
---tmp_[1] = fm(modulo,freq,1,ticopl_frame)
+tmp_[1] = fm(modulo,freq,1,ticopl_frame)
 --tmp_[2] = fm(90,freq,1,ticopl_frame)
 --tmp_[1] = pwm(volume*2)
 --tmp_[2] = fm2(tmp_[1],modulo,freq,ticopl_frame)
 --tmp_[1] = pwm(volume*2)
---local tmp = wfsum(tmp_)
+local tmp = wfsum(tmp_) -- to accumulate fm results
 
---local tmp = peekwfrl(ch)
-local tmp = wfmod(psg(wft.SAW,volume*3+1,1,0,15),15)
+--local tmp = peekwfrl(ch) -- to grab original waveform
+--local tmp = wfmod(psg(wft.SAW,volume*3+1,1,0,15),15)
 --tmp = fm2(tmp,modulo,freq,0)
 --tmp = wfmul(tmp,psg(wft.NOI,15))
 
 
-tmp = filter(tmp,16-volume)
+--tmp = filter(tmp,16-volume)
 tmp = normalize(tmp)
 
 local tmp2=""
@@ -289,7 +289,7 @@ local f=math.floor
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
 end end
 end
-local function writesfx()
+--[[local function writesfx()
     local vol="0123456789abcedfffffffffffffff"
     for ch=0,63 do
         for i=1,30 do
@@ -298,9 +298,9 @@ local function writesfx()
         poke4(2*0x100e4+121,7)
         poke(0x100e4+63+64*ch,0xf1)
     end
+end]]
+--writesfx() --unused
+synthesis() -- core of synthesis part
+visualize() -- visualizer of sound registers
 end
---writesfx()
-synthesis()
-visualize()
-end
-local function OVR()vbank(1)ticsyn()end
+function OVR()vbank(1)ticsyn()end
