@@ -7,7 +7,7 @@ vols,sfx_frame = {0,0,0,0},{0,0,0,0}
 function ticsyn()
 local function peekwfrl(index)
 local out
-f = string.format
+local f = string.format
 out = {}
 local j=1
 for i=2*0xff9c+index*36+4, 2*0xff9c+(index)*36+35 do
@@ -19,7 +19,7 @@ return out
 end
 local function peekwfr(index)
     local out
-    f = string.format
+    local f = string.format
     out = ""
     for i=0xff9c+index*18+2, 0xff9c+(index)*18+17 do
     u = peek(i)
@@ -35,10 +35,10 @@ poke(i,tonumber(string.sub(data,j,j+1),16))
 j = j + 2
 end
 end
-sub = string.sub
+local sub = string.sub
 local function nclip(num,min,max)if num==nil or tostring(num)=="nan" then return 0 else return math.min(math.max(num,min),max)end end
 local function fm(int,freq,freq2,ticopl_frame,theta,vol)
-    f = string.format
+    local f = string.format
     local tmp = carrier or {}
     local j=1
     local theta,vol = theta or 0,vol or 1
@@ -207,19 +207,13 @@ modulo = volume*intensity
 --put your algolithm here...
 
 tmp_[1] = fm(modulo,freq,1,ticopl_frame)
---tmp_[2] = fm(90,freq,1,ticopl_frame)
---tmp_[1] = pwm(volume*2)
 --tmp_[2] = fm2(tmp_[1],modulo,freq,ticopl_frame)
---tmp_[1] = pwm(volume*2)
+
 local tmp = wfsum(tmp_) -- to accumulate fm results
 
 --local tmp = peekwfrl(ch) -- to grab original waveform
---local tmp = wfmod(psg(wft.SAW,volume*3+1,1,0,15),15)
 --tmp = fm2(tmp,modulo,freq,0)
---tmp = wfmul(tmp,psg(wft.NOI,15))
 
-
---tmp = filter(tmp,16-volume)
 tmp = normalize(tmp) -- to normalize synthesis results
 
 local tmp2=""
