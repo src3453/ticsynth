@@ -278,4 +278,4 @@ keyexec()   -- key parameter changer
 synthesis() -- core of synthesis part
 visualize() -- visualizer of sound registers
 end
-function OVR()vbank(1)ticsyn()end
+function OVR()vbank(1)ticsyn()end --execute
