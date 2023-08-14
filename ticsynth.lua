@@ -149,7 +149,7 @@ local function psg(wftype,vol,freq,duty,phase)
     
     for i=1,32 do
         if wftype==wft.SQU then
-            tmp[(phase+i)%32+1]=(math.max(math.min((duty)-(i-1),1),0)//1)*15
+            tmp[(phase+i)%32+1]=(math.max(math.min((duty)-((i-1)*freq)%32,1),0)//1)*15
         end if wftype==wft.TRI then
             tmp[(phase+i)%32+1]=math.abs((i*freq%31)-15)*vol
         end if wftype==wft.SAW then
@@ -263,19 +263,30 @@ local f=math.floor
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
 end end
 end
---[[local function writesfx()
-    local vol="0123456789abcedfffffffffffffff"
-    for ch=0,63 do
-        for i=1,30 do
-            poke4(0x201c4+128*ch+i*4,tonumber(string.sub(vol,i,i),16))
-        end
-        poke4(2*0x100e4+121,7)
-        poke(0x100e4+63+64*ch,0xf1)
-    end
-end]]
---writesfx() --unused
+function wave()
+    sub=string.sub
+    for ch=0,3 do
+        local val_,vol_,freq_
+        val_ = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
+        vol_ = (val_&0xf000)>>12
+        freq_ = (val_&0x0fff)+1
+        --vol_ = 15
+        rect(0,0+ch*17,240,17,10)
+        local wf=peekwfrl(ch)
+        local j=freq_/384
+        local f=math.floor
+        local r=math.random
+        if math.max(table.unpack(wf)) == 0 then for i=1,32 do wf[i]=r(0,1)*15 end end
+        for i=-120,120 do
+            local val = wf[f(i*j%31+1)] or 0
+            local val2 = wf[f((i+1)*j%31+1)] or 0
+            
+            line(i*1+120,8+ch*17-(val-8)*(vol_/16)/(16/16),i*1+121,8+ch*17-(val2-8)*(vol_/16)/(16/16),15)
+        end end
+end
 keyexec()   -- key parameter changer
 synthesis() -- core of synthesis part
 visualize() -- visualizer of sound registers
+--wave()    -- additional wave visualizer
 end
 function OVR()vbank(1)ticsyn()end --execute
