@@ -163,14 +163,24 @@ local function psg(wftype,vol,freq,duty,phase)
     return tmp
 end
 local function wfclip(wf,min,max)
-local tmp=wf
-for i=1,#wf do
-    for j=1,32 do
-        tmp[i] = nclip(wf[i],min,max)
+    local tmp=wf
+    
+        for j=1,32 do
+            tmp[i] = nclip(wf[i],min,max)
+    
     end
-end
-return tmp
-end
+    return tmp
+    end
+local function wfasmelodic(wf)
+        local tmp=wf
+        local clip
+            if math.max(table.unpack(wf)) == 0 then clip = 0 else clip = 1 end
+                for j=1,32 do 
+                    tmp[i] = nclip(wf[i],clip,15)
+            
+        end
+        return tmp
+    end
 local function keyexec()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
@@ -232,7 +242,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.6 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.7 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -276,10 +286,11 @@ function wave()
         local j=freq_/384
         local f=math.floor
         local r=math.random
-        if math.max(table.unpack(wf)) == 0 then for i=1,32 do wf[i]=r(0,1)*15 end end
+        if math.max(table.unpack(wf)) == 0 then for i=1,255 do wf[i]=r(0,1)*15 end end
         for i=-120,120 do
-            local val = wf[f(i*j%31+1)] or 0
-            local val2 = wf[f((i+1)*j%31+1)] or 0
+            local val = wf[f(i*j%(#wf)+1)] or 0
+            local val2 = wf[f((i+1)*j%(#wf)+1)] or 0
+            
             
             line(i*1+120,8+ch*17-(val-8)*(vol_/16)/(16/16),i*1+121,8+ch*17-(val2-8)*(vol_/16)/(16/16),15)
         end end
@@ -290,3 +301,4 @@ visualize() -- visualizer of sound registers
 --wave()    -- additional wave visualizer
 end
 function OVR()vbank(1)ticsyn()end --execute
+--function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
