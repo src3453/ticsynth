@@ -39,7 +39,7 @@ local sub = string.sub
 local function nclip(num,min,max)if num==nil or tostring(num)=="nan" then return 0 else return math.min(math.max(num,min),max)end end
 local function fm(int,freq,freq2,ticopl_frame,theta,vol)
     local f = string.format
-    local tmp = carrier or {}
+    local tmp = {}
     local j=1
     local theta,vol = theta or 0,vol or 1
     for i = ticopl_frame, ticopl_frame+32 do
@@ -98,9 +98,11 @@ end
     end
 local ftype = {
     LP = 0,
-    HP = 1
+    HP = 1,
+    BP = 2,
+    NOT= 3
 }
-local function filter(input,cutoff,filtType,q,omega,a0,a1,a2,b0,b1,b1f,b2)
+local function filter(input,cutoff,filtType,bw,q,omega,a0,a1,a2,b0,b1,b1f,b2)
 if filtType == ftype.LP then
     b1f = 1
 elseif filtType == ftype.HP then
@@ -116,10 +118,22 @@ local a2= ( 1.0 or a2) -alpha
 local b0=(( 1.0 or b0) -cos(omega))/2.0
 local b1= b1f*(( 1.0 or b1) -cos(omega))
 local b2=(( 1.0 or b2) -cos(omega))/2.0
+if filtType == ftype.BP then
+    alpha = sin(omega) * math.sinh(math.log(2.0) / 2.0 * bw * omega / sin(omega));
+    b0 =  alpha
+    b1 =  0.0
+    b2 = -alpha
+end
+if filtType == ftype.NOT then
+    alpha = sin(omega) * math.sinh(math.log(2.0) / 2.0 * bw * omega / sin(omega));
+    b0 = 1.0
+    b1 = -2*cos(omega)
+    b2 = 1.0
+end
 local output = {}
 local in1,in2,out1,out2=input[1],input[1],input[1],input[1]
 for i=1,#input*3 do
-output[i]=nclip(b0/a0*input[i%#input+1]+b1/a0*in1+b2/a0*in2-a1/a0*out1-a2/a0*out2,0,15)
+output[i]=b0/a0*input[i%#input+1]+b1/a0*in1+b2/a0*in2-a1/a0*out1-a2/a0*out2
 in2= in1   -- 2つ前の入力信号を更新
 in1 = input[i%#input+1]  -- 1つ前の入力信号を更新
 out2 = out1  -- 2つ前の出力信号を更新
@@ -171,16 +185,7 @@ local function wfclip(wf,min,max)
     end
     return tmp
     end
-local function wfasmelodic(wf)
-        local tmp=wf
-        local clip
-            if math.max(table.unpack(wf)) == 0 then clip = 0 else clip = 1 end
-                for j=1,32 do 
-                    tmp[i] = nclip(wf[i],clip,15)
-            
-        end
-        return tmp
-    end
+
 local function keyexec()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
