@@ -42,7 +42,7 @@ local function fm(int,freq,freq2,ticopl_frame,theta,vol)
     local tmp = {}
     local j=1
     local theta,vol = theta or 0,vol or 1
-    for i = ticopl_frame, ticopl_frame+32 do
+    for i = ticopl_frame, ticopl_frame+31 do
     tmp[j]=nclip(vol*math.sin(theta+math.rad(i*(360/32)*freq2+math.sin(math.rad(i*(360/32)*freq))*(int)))*8+8,0,15)
     j=j+1
     end
@@ -53,10 +53,25 @@ end
         local f = math.floor
         local tmp = {}
         local j=1
-        for i = timestate, timestate+32 do
+        for i = timestate, timestate+31 do
       --j = tonumber(sub(peekwf(operator),i,i),16)
             --tmp = tmp .. f("%01x",math.floor((tonumber(sub(peekwf(carrier),i,i),16) + tonumber(sub(peekwf(operator),i,i),16))%16))
             local res = (i-timestate+1)+(math.sin(math.rad(i*(360/32)*freq))*(int/360))*16%32+1
+            local val = carrier[1+f(res)%32]+(carrier[1+f(res+1)%32]-carrier[1+f(res)%32])*res%1
+            tmp[j] = nclip(val,0,15)
+            j=j+1
+        end
+        return tmp
+    end
+    local function fm3(carrier,modulator)
+        --timestate = timestate or 1
+        local f = math.floor
+        local tmp = {}
+        local j=1
+        for i = 0, 0+31 do
+      --j = tonumber(sub(peekwf(operator),i,i),16)
+            --tmp = tmp .. f("%01x",math.floor((tonumber(sub(peekwf(carrier),i,i),16) + tonumber(sub(peekwf(operator),i,i),16))%16))
+            local res = (nclip(modulator[i+1],0,15)+1)*2
             local val = carrier[1+f(res)%32]+(carrier[1+f(res+1)%32]-carrier[1+f(res)%32])*res%1
             tmp[j] = nclip(val,0,15)
             j=j+1
@@ -186,7 +201,7 @@ local function wfclip(wf,min,max)
     return tmp
     end
 
-local function keyexec()
+local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
     if btnp(2,20,2) then freq=freq-0.1 end
@@ -247,7 +262,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.7 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.8 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -269,7 +284,7 @@ local val_,vol_,freq_
 val_ = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 vol_ = (val_&0xf000)>>12
 freq_ = (val_&0x0fff)+1
-freq_ = 120
+freq_ = 90.35*2
 vol_ = 15
 for i=0,68 do
 local j=freq_/192
@@ -300,7 +315,7 @@ function wave()
             line(i*1+120,8+ch*17-(val-8)*(vol_/16)/(16/16),i*1+121,8+ch*17-(val2-8)*(vol_/16)/(16/16),15)
         end end
 end
-keyexec()   -- key parameter changer
+keypermchanger()   -- key parameter changer
 synthesis() -- core of synthesis part
 visualize() -- visualizer of sound registers
 --wave()    -- additional wave visualizer
