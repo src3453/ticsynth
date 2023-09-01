@@ -200,7 +200,10 @@ local function wfclip(wf,min,max)
     end
     return tmp
     end
-
+local function ismelodic(ch)
+    local tmp=math.max(table.unpack(peekwfrl(ch)))
+    if tmp == 0 then return 0 else return 1 end
+end
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
@@ -262,7 +265,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.8 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.9 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
