@@ -5,7 +5,7 @@ Software synth for TIC-80 written in lua. You can freely define the synthesis me
 ## Supported synth methods
 - FM
 - Filter
-- PSG (Sin/Square(Pulse)/Triangle/Sawtooth/Noise)
+- PSG (Sine/Square(Pulse)/Triangle/Sawtooth/Noise)
 - AM
 - mod/mul
 - and more in future updates
