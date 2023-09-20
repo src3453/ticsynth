@@ -204,6 +204,16 @@ local function ismelodic(ch)
     local tmp=math.max(table.unpack(peekwfrl(ch)))
     if tmp == 0 then return 0 else return 1 end
 end
+local function pd(wf,mul)
+    local ind=0
+    local out={}
+    for i=1,32 do
+        local val=math.cos(math.rad(ind*(360/32)*mul))*8+7
+        out[i]=val
+        ind=ind+wf[i]
+    end
+    return out
+end
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
@@ -239,13 +249,9 @@ modulo = volume*intensity
 
 --put your algolithm here...
 
-tmp_[1] = fm(modulo,freq,1,ticopl_frame)
---tmp_[2] = fm2(tmp_[1],modulo,freq,ticopl_frame)
-
-local tmp = wfsum(tmp_) -- to accumulate fm results
-
---local tmp = peekwfrl(ch) -- to grab original waveform
+local tmp = peekwfrl(ch) -- to grab original waveform
 --tmp = fm2(tmp,modulo,freq,0)
+tmp = pd(tmp,1/4)
 
 tmp = normalize(tmp) -- to normalize synthesis results
 
@@ -265,7 +271,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.9 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.10 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -278,7 +284,7 @@ modulo = volume*intensity
 rect(0,100+8*ch,100,8,1)
 rect(0,100+8*ch,volume*2,7,12)
 rect(0,107+8*ch,vols[ch+1]*2,1,12)
-rect(math.log(freqnum,2)*1.33,100+8*ch,1,8,2)
+rect(math.log(freqnum,2)*2,100+8*ch,1,8,2)
 print(frequency..volume,0,101+8*ch,0,1,1,0)
 --print(f("%4d,%-4s",math.floor(modulo),sub(tstr(freq),1,4)),63,101+8*ch,0,1,1,0)
 end
@@ -304,24 +310,23 @@ function wave()
         vol_ = (val_&0xf000)>>12
         freq_ = (val_&0x0fff)+1
         --vol_ = 15
-        rect(0,0+ch*17,240,17,10)
+        rect(0,0+ch*33,240,37,12)
         local wf=peekwfrl(ch)
         local j=freq_/384
         local f=math.floor
         local r=math.random
-        if math.max(table.unpack(wf)) == 0 then for i=1,255 do wf[i]=r(0,1)*15 end end
+        if math.max(table.unpack(wf)) == 0 then for i=1,32 do wf[i]=r(0,1)*15 end end
         for i=-120,120 do
-            local val = wf[f(i*j%(#wf)+1)] or 0
-            local val2 = wf[f((i+1)*j%(#wf)+1)] or 0
+            local val = wf[f(i*j%31+1)] or 0
+            local val2 = wf[f((i+1)*j%31+1)] or 0
             
-            
-            line(i*1+120,8+ch*17-(val-8)*(vol_/16)/(16/16),i*1+121,8+ch*17-(val2-8)*(vol_/16)/(16/16),15)
+            line(i*1+120,16+ch*33-(val-8)*(vol_/16)/(16/32),i*1+121,16+ch*33-(val2-8)*(vol_/16)/(16/32),15)
         end end
 end
 keypermchanger()   -- key parameter changer
 synthesis() -- core of synthesis part
-visualize() -- visualizer of sound registers
 --wave()    -- additional wave visualizer
+visualize() -- visualizer of sound registers
 end
 function OVR()vbank(1)ticsyn()end --execute
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
