@@ -20,19 +20,27 @@ local function peekwfr(index)
     local out
     local f = string.format
     out = ""
-    for i=0xff9c+index*18+2, 0xff9c+(index)*18+17 do
-    u = peek(i)
-    out = out .. f("%02x",u)
+    for i=2*0xff9c+index*36+4, 2*0xff9c+(index)*36+35 do
+    u = peek4(i)
+    out = out .. f("%01x",u)
     end
     return out
     end
-local function pokewfr(index,data)
+local function legacy_pokewfr(index,data) --for debug purpose only
 local j
 j = 1
 for i=0xff9c+index*18+2, 0xff9c+(index)*18+17 do
 poke(i,tonumber(string.sub(data,j,j+1),16))
 j = j + 2
 end
+end
+local function pokewfr(index,data)
+    local j
+    j = 1
+    for i=2*0xff9c+index*36+4, 2*0xff9c+(index)*36+35 do
+    poke4(i,tonumber(string.sub(data,j,j),16))
+    j = j + 1
+    end
 end
 local sub = string.sub
 local function nclip(num,min,max)if num==nil or tostring(num)=="nan" then return 0 else return math.min(math.max(num,min),max)end end
