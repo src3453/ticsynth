@@ -6,9 +6,8 @@ syn_enable = {true, true, true, true}
 vols,sfx_frame = {0,0,0,0},{0,0,0,0}
 function ticsyn()
 local function peekwfrl(index)
-local out
 local f = string.format
-out = {}
+local out = {}
 local j=1
 for i=2*0xff9c+index*36+4, 2*0xff9c+(index)*36+35 do
 u = peek4(i)
@@ -202,7 +201,7 @@ local function wfclip(wf,min,max)
     end
 local function ismelodic(ch)
     local tmp=math.max(table.unpack(peekwfrl(ch)))
-    if tmp == 0 then return 0 else return 1 end
+    if tmp == 0 then return false else return true end
 end
 local function pd(wf,mul)
     local ind=0
@@ -213,6 +212,13 @@ local function pd(wf,mul)
         ind=ind+wf[i]
     end
     return out
+end
+local function wfline(wf,x1,x2,y1,y2)
+    for x=0,x2-x1 do
+        local y=y1+(y2-y1)*(x/(x2-x1))
+        wf[x+x1] = y
+    end
+    return wf
 end
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
@@ -230,10 +236,11 @@ local intensity=modint*9
 --pokewf(i,peekwf(0))end
 for ch=0,3 do
 if syn_enable[ch+1] then
-local tmp,tmp_={},{}
+local out={}
 local value,volume,modulo,freqnum
-
-
+for i=1,32 do
+    out[i] = 0    
+end
 
 local rate = 1
 value = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
@@ -249,15 +256,20 @@ modulo = volume*intensity
 
 --put your algolithm here...
 
-local tmp = peekwfrl(ch) -- to grab original waveform
---tmp = fm2(tmp,modulo,freq,0)
-tmp = pd(tmp,1/4)
+--out = peekwfrl(ch) -- to grab original waveform
+if ismelodic(ch) then
+    out = wfline(out,0,15-volume,0,15)
+    out = wfline(out,15-volume,31,15,0)
+    --out = wfclip(wfline(out,0,15,15,volume),1,15)
+end
+--out = fm2(out,modulo,freq,0)
+--out = pd(out,modint/4)
 
-tmp = normalize(tmp) -- to normalize synthesis results
+out = normalize(out) -- to normalize synthesis results
 
 local tmp2=""
-for _,i in pairs(tmp) do
-tmp2=tmp2..f("%x",math.floor(tonumber(i))) 
+for _,i in pairs(out) do
+tmp2=tmp2..f("%x",nclip(math.floor(tonumber(i or 0)),0,15)) 
 end
 --print(tmp2)
 pokewfr(ch,tmp2) -- poke results to sound registers
@@ -271,16 +283,15 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.10 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v3.12 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
-local value,volume,frequency,freqnum,modulo
+local value,volume,frequency,freqnum
 value = peek(0xFF9C+18*ch+1)<<8|peek(0xFF9C+18*ch)
 volume = (value&0xf000)>>12
 frequency = f("%4dv",value&0x0fff)
 freqnum = value&0x0fff
-modulo = volume*intensity
 rect(0,100+8*ch,100,8,1)
 rect(0,100+8*ch,volume*2,7,12)
 rect(0,107+8*ch,vols[ch+1]*2,1,12)
@@ -317,10 +328,11 @@ function wave()
         local r=math.random
         if math.max(table.unpack(wf)) == 0 then for i=1,32 do wf[i]=r(0,1)*15 end end
         for i=-120,120 do
+            local offset = (peek4(2*(0x14000+ch))+peek4(2*(0x14000+ch)+1))/2
             local val = wf[f(i*j%31+1)] or 0
             local val2 = wf[f((i+1)*j%31+1)] or 0
             
-            line(i*1+120,16+ch*33-(val-8)*(vol_/16)/(16/32),i*1+121,16+ch*33-(val2-8)*(vol_/16)/(16/32),15)
+            line(i*1+120,16+ch*33-(val-8)*(vol_/16)/(16/32)*offset,i*1+121,16+ch*33-(val2-8)*(vol_/16)/(16/32)*offset,15)
         end end
 end
 keypermchanger()   -- key parameter changer
@@ -328,5 +340,5 @@ synthesis() -- core of synthesis part
 --wave()    -- additional wave visualizer
 visualize() -- visualizer of sound registers
 end
-function OVR()vbank(1)ticsyn()end --execute
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
+function OVR()vbank(1)ticsyn()end --execute
