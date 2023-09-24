@@ -328,7 +328,7 @@ function wave()
         local r=math.random
         if math.max(table.unpack(wf)) == 0 then for i=1,32 do wf[i]=r(0,1)*15 end end
         for i=-120,120 do
-            local offset = (peek4(2*(0x14000+ch))+peek4(2*(0x14000+ch)+1))/2
+            local offset = (peek4(2*(0x14000+ch))+peek4(2*(0x14000+ch)+1))/32
             local val = wf[f(i*j%31+1)] or 0
             local val2 = wf[f((i+1)*j%31+1)] or 0
             
