@@ -266,9 +266,10 @@ modulo = volume*intensity
 
 --out = peekwfrl(ch) -- to grab original waveform
 if ismelodic(ch) then
-    out = wfline(out,0,15-volume,0,15)
-    out = wfline(out,15-volume,31,15,0)
+    --out = wfline(out,0,15-volume,0,15)
+    --out = wfline(out,15-volume,31,15,0)
     --out = wfclip(wfline(out,0,15,15,volume),1,15)
+    out = fm(modulo,freq,1,0)
 end
 --out = fm2(out,modulo,freq,0)
 --out = pd(out,modint/4)
@@ -291,7 +292,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v3.12 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v4.0 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
