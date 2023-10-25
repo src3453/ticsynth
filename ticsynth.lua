@@ -26,14 +26,6 @@ local function peekwfr(index)
     end
     return out
     end
-local function legacy_pokewfr(index,data) --for debug purpose only
-local j
-j = 1
-for i=0xff9c+index*18+2, 0xff9c+(index)*18+17 do
-poke(i,tonumber(string.sub(data,j,j+1),16))
-j = j + 2
-end
-end
 local function pokewfr(index,data)
     local j
     j = 1
@@ -92,6 +84,13 @@ end
             tmp[i] = (tmp[i]or 0)+wf[j][i]
             end
         end
+        return tmp
+    end
+    local function wfadd(wf,num)
+        local tmp={}
+            for i=1,32 do
+            tmp[i] = wf[i]+num
+            end
         return tmp
     end
     local function wfmul(a,b)local tmp={}for i=1,32 do if type(b)=="number"then tmp[i]=a[i]*b else tmp[i]=a[i]*b[i]end end return tmp end
@@ -178,22 +177,22 @@ local wft={
 local function psg(wftype,vol,freq,duty,phase)
     duty=duty or 15
     freq=freq or 1
-    vol=vol/16 or 1
+    vol=vol or 15
     phase=math.floor(phase or 0)
     --freq=freq/2
     tmp={}
-    
+        
     for i=1,32 do
         if wftype==wft.SQU then
-            tmp[(phase+i)%32+1]=(math.max(math.min((duty)-((i-1)*freq)%32,1),0)//1)*15
+            tmp[(phase+i)%32+1]=(math.max(math.min((duty)-((i-1)*freq)%32,1),0)//1)*vol
         end if wftype==wft.TRI then
-            tmp[(phase+i)%32+1]=math.abs((i*freq%31)-15)*vol
+            tmp[(phase+i)%32+1]=math.abs((i*freq%31)-15)*vol/16
         end if wftype==wft.SAW then
-            tmp[(phase+i)%32+1]=(i*freq%31)*vol/2
+            tmp[(phase+i)%32+1]=(i*freq%31)*vol/32
         end if wftype==wft.SIN then
-            tmp[(phase+i)%32+1]=math.sin(math.rad((i*freq)*(360/32)))*vol*7+8
+            tmp[(phase+i)%32+1]=math.sin(math.rad((i*freq)*(360/32)))*(vol//2)+(vol//2)
         end if wftype==wft.NOI then
-            tmp[(phase+i)%32+1]=math.random()*vol*15
+            tmp[(phase+i)%32+1]=math.random()*vol
         end
     end
     return tmp
@@ -228,6 +227,41 @@ local function wfline(wf,x1,x2,y1,y2)
     end
     return wf
 end
+local function _adsr(A,D,S,R,gate,duration)
+    local e = {}
+    local exp = math.exp
+    for i=1,duration do
+        e[i] = 0
+    end; 
+    if A~=0 then
+        for n=1,A do
+            e[n]=1-exp(-5*(n-1)/A)
+        end
+    end
+    if D~=0 then
+        for n=A+1,gate do
+            e[n]=S+(1-S)*exp(-5*(n-1-A)/D)
+        end
+    else
+        for n=A+1,gate do
+            e[n]=S
+        end  
+    end
+    if R~=0 then
+        for n=gate+1,duration do
+            e[n]=e[gate]*exp(-5*(n-gate+2)/R)
+        end
+    end
+    return e
+end
+local function ads(alevel,attack,decay,sustain,frame)
+    return (_adsr(attack,decay,sustain/alevel,0,999,attack+decay)[frame+1] or 0)*alevel
+end
+local function playFMinst(f1,p1,a1,d1,s1,f2,p2,a2,d2,s2,ch,frame)
+local out = fm(ads(90*p1,a1,d1,s1,frame),f2,f1,0)
+poke4(2*0xff9c+36*ch+3,ads(15*p2,a2,d2,s2,frame))
+return out
+end
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
@@ -259,6 +293,7 @@ if (value&0xf000)>>12 == 15 then
 else
     sfx_frame[ch+1]=sfx_frame[ch+1]+1
 end
+local frame = sfx_frame[ch+1]
 freqnum = value&0x0fff
 modulo = volume*intensity
 
@@ -266,12 +301,16 @@ modulo = volume*intensity
 
 --out = peekwfrl(ch) -- to grab original waveform
 if ismelodic(ch) then
+    --out = psg(wft.SAW,15,1,15)
+    --out = filter(out,volume/2+1,ftype.LP,5,4)
     --out = wfline(out,0,15-volume,0,15)
     --out = wfline(out,15-volume,31,15,0)
     --out = wfclip(wfline(out,0,15,15,volume),1,15)
-    out = fm(modulo,freq,1,0)
-end
+    out = playFMinst(1,3,30,30,0,1,1,0,60,0,ch,frame)
+end	
 --out = fm2(out,modulo,freq,0)
+
+
 --out = pd(out,modint/4)
 
 out = normalize(out) -- to normalize synthesis results
@@ -292,7 +331,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v4.0 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v4.1 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -346,7 +385,7 @@ function wave()
 end
 keypermchanger()   -- key parameter changer
 synthesis() -- core of synthesis part
---wave()    -- additional wave visualizer
+wave()    -- additional wave visualizer
 visualize() -- visualizer of sound registers
 end
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
