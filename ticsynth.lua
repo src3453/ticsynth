@@ -258,9 +258,9 @@ local function ads(alevel,attack,decay,sustain,frame)
     return (_adsr(attack,decay,sustain/alevel,0,999,attack+decay)[frame+1] or 0)*alevel
 end
 local function playFMinst(f1,p1,a1,d1,s1,f2,p2,a2,d2,s2,ch,frame)
-local out = fm(ads(90*p1,a1,d1,s1,frame),f2,f1,0)
-poke4(2*0xff9c+36*ch+3,ads(15*p2,a2,d2,s2,frame))
-return out
+    local out = fm(ads(90*p2,a2,d2,s2,frame),f2,f1,0)
+    poke4(2*0xff9c+36*ch+3,ads(15*p1,a1,d1,s1,frame))
+    return out
 end
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
