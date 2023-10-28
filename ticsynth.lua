@@ -417,7 +417,7 @@ visualize() -- visualizer of sound registers
 end
 insts={
 				--define your FM instrumentals here...
-    {1,1,3,30,0,3,0.7,0,30,0}, --piano
+    {1,1,3,60,0,3,0.7,0,60,0}, --piano
 }
 --insts[1]={1,1,3,30,1,3,0.7,0,30,1}
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
