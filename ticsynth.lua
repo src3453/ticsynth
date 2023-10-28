@@ -3,7 +3,7 @@ freq=3.0
 modint=1.0
 ticopl_frame = 0
 syn_enable = {true, true, true, true}
-vols,sfx_frame = {0,0,0,0},{0,0,0,0}
+vols,sfx_frame,sfxnum = {0,0,0,0},{0,0,0,0},{0,0,0,0}
 function ticsyn()
 local function peekwfrl(index)
 local f = string.format
@@ -255,13 +255,34 @@ local function _adsr(A,D,S,R,gate,duration)
     return e
 end
 local function ads(alevel,attack,decay,sustain,frame)
-    return (_adsr(attack,decay,sustain/alevel,0,999,attack+decay)[frame+1] or 0)*alevel
+    return (_adsr(attack,decay,sustain,0,999,attack+decay)[frame+1] or 0)*alevel
 end
 local function playFMinst(f1,p1,a1,d1,s1,f2,p2,a2,d2,s2,ch,frame)
     local out = fm(ads(90*p2,a2,d2,s2,frame),f2,f1,0)
     poke4(2*0xff9c+36*ch+3,ads(15*p1,a1,d1,s1,frame))
     return out
 end
+local function playpcm(ch,wave,frame)
+	local sub = string.sub
+	frame = math.floor(frame)
+	pokewfr(ch,sub(wave,1+32*frame,32+32*frame))
+	--trace(sub(wave,1+32*frame,32+32*frame))
+	poke(0xFF9C+18*ch,60)
+	poke(0xFF9D+18*ch,240)
+end
+local function getpatternnum(ch,track,frame)
+    local value = peek(0x13E64+3*frame+51*track+2)<<16|peek(0x13E64+3*frame+51*track+1)<<8|peek(0x13E64+3*frame+51*track)
+    value = {(value&0xFC0000)>>18,(value&0x3F000)>>12,(value&0xFC0)>>6,(value&0x3F)>>0}
+    return value[5-(ch+1)]
+end
+local function getsfxnum(ch)
+    local pattern = getpatternnum(ch,peek(0x13ffc),peek(0x13ffd))-1
+    local row = peek(0x13ffe)
+    local value = peek(0x11164+3*row+192*pattern+2)<<16|peek(0x11164+3*row+192*pattern+1)<<8|peek(0x11164+3*row+192*pattern)
+    out = (value&0x1F8000)>>16
+    note = (value&0xF)
+    return {out,note}
+end 
 local function keypermchanger()
     if btnp(0,20,2) then modint=modint+0.1 end
     if btnp(1,20,2) then modint=modint-0.1 end
@@ -294,6 +315,9 @@ else
     sfx_frame[ch+1]=sfx_frame[ch+1]+1
 end
 local frame = sfx_frame[ch+1]
+if getsfxnum(ch)[2] >= 4 then
+    sfxnum[ch+1] = getsfxnum(ch)[1]
+end
 freqnum = value&0x0fff
 modulo = volume*intensity
 
@@ -306,10 +330,13 @@ if ismelodic(ch) then
     --out = wfline(out,0,15-volume,0,15)
     --out = wfline(out,15-volume,31,15,0)
     --out = wfclip(wfline(out,0,15,15,volume),1,15)
-    out = playFMinst(1,3,30,30,0,1,1,0,60,0,ch,frame)
+    local inst = insts[sfxnum[ch+1]] or insts[1]
+    inst[11]=ch
+    inst[12]=frame
+    out = playFMinst(table.unpack(inst))
 end	
 --out = fm2(out,modulo,freq,0)
-
+--print(sfxnum[ch+1],0,ch*8)
 
 --out = pd(out,modint/4)
 
@@ -331,7 +358,7 @@ tstr=tostring
 floor=math.floor
 rect(0,86,100,16,1)
 print("TicSynth",0,87,0)
-print("v4.1 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
+print("v4.2 "..sub(tstr(freq),1,4)..","..floor(modint*10)/10,44,87,0,1,1,0) 
 print(f("%7s","#"..f("%1d",peek(0x13ffc))..":"..f("%1X",peek(0x13ffd)).."."..f("%2d",peek(0x13ffe))),0,93,fgc,1,1,0) 
 
 for ch=0,3 do
@@ -385,8 +412,13 @@ function wave()
 end
 keypermchanger()   -- key parameter changer
 synthesis() -- core of synthesis part
-wave()    -- additional wave visualizer
+--wave()    -- additional wave visualizer
 visualize() -- visualizer of sound registers
 end
+insts={
+				--define your FM instrumentals here...
+    {1,1,3,30,0,3,0.7,0,30,0}, --piano
+}
+--insts[1]={1,1,3,30,1,3,0.7,0,30,1}
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
 function OVR()vbank(1)ticsyn()end --execute
