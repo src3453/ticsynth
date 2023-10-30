@@ -381,12 +381,15 @@ vol_ = (val_&0xf000)>>12
 freq_ = (val_&0x0fff)+1
 freq_ = 90.35*2
 vol_ = 15
-for i=0,68 do
+for i=0,60 do
 local j=freq_/192
 local f=math.floor
     local wf=peekwfr(ch)
 line(i*1+30,107+ch*8-tonumber(sub(wf,f(i*j%31+1)or 0,f(i*j%31+1)or 0),16)*(vol_/16)/(16/7),i*1+31,107+ch*8-tonumber(sub(wf,f((i+1)*j%31+1)or 0,f((i+1)*j%31+1)or 0),16)*(vol_/16)/(16/7),0)
-end end
+end 
+print(string.format("%2s",sfxnum[ch+1]),92,101+ch*8,0,1,1,1)
+end
+
 end
 function wave()
     sub=string.sub
@@ -426,6 +429,7 @@ insts={
     {1,1,0,60,0.5,2,1,0,0,1},
     {1,1,5,60,0,3,1,5,45,0},
     {1.5,1,0,60,0,5,2,0,20,0.1}, --Koto like
+    {5.0,1.0,5,60,0,3.0,1.0,0,60,0},
     ]]
 }
 --insts[1]={1,1,3,30,1,3,0.7,0,30,1}
