@@ -436,4 +436,6 @@ insts={
 }
 --insts[1]={1,1,3,30,1,3,0.7,0,30,1}
 --function OVR()vbank(1)ticsyn()for ch=0,3 do if peek4(2*0xff9c+ch*36+3)~=0 then poke4(2*0xff9c+ch*36+3,15)end end end --unused
-function OVR()vbank(1)ticsyn()end --execute
+--function OVR()vbank(1)ticsyn()end --execute
+ticsyn_TIC=TIC;function TIC()textri=ttri;vbank(1)if OVR then cls()OVR()end;vbank(0)ticsyn_TIC()ticsyn()end --wrapper
+
